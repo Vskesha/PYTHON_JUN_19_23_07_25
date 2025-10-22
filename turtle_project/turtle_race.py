@@ -1,0 +1,205 @@
+import turtle
+import random
+import time
+
+
+fwidth = 800
+fheight = 600
+border = 20
+colors = ["red", "blue", "green", "gray", "yellow", "pink", "brown", "purple", "orange"]
+turtles = []
+number_of_obstacles = 35
+obstacles = []
+delay = 0.1
+
+hwidth = fwidth // 2
+hheight = fheight // 2
+finish = hheight - border * 2
+start = -finish
+
+
+screen = turtle.Screen()
+screen.title("Черепаші перегони")
+screen.bgcolor("lightblue")
+screen.setup(fwidth + border * 2, fheight + border * 2)
+
+status_pen = turtle.Turtle()
+status_pen.penup()
+status_pen.hideturtle()
+status_pen.goto(0, finish + border // 2)
+
+
+def start_game(x, y):
+    screen.onscreenclick(None)
+
+    initialize_field()
+
+    num_players = get_number_of_players()
+
+    generate_turtles(num_players)
+
+    generate_obstacles()
+
+    start_race()
+
+
+def draw_start_button():
+    w = 200
+    h = 50
+
+    t = turtle.Turtle()
+    t.speed(8)
+    t.penup()
+    t.goto(-w // 2, h)
+    t.pendown()
+    t.color("black", "green")
+    t.begin_fill()
+    for _ in range(2):
+        t.forward(w)
+        t.left(90)
+        t.forward(h)
+        t.left(90)
+    t.end_fill()
+
+    t.forward(w // 2)
+    t.color("white")
+    t.write(
+        "Start game",
+        font=("Arial", h // 2, "bold"),
+        align="center"
+    )
+    t.hideturtle()
+
+def initialize_field():
+    screen.clear()
+    t = turtle.Turtle()
+    t.speed(10)
+    t.penup()
+    t.goto(-hwidth, -hheight)
+    t.pendown()
+
+    t.pensize(3)
+    for _ in range(2):
+        t.forward(fwidth)
+        t.left(90)
+        t.forward(fheight)
+        t.left(90)
+
+    t.penup()
+    t.goto(-hwidth, start)
+    t.pendown()
+    t.color("blue")
+    t.write("Start", font=("Arial", 14, "bold"))
+    t.forward(fwidth)
+
+    t.penup()
+    t.goto(-hwidth, finish)
+    t.pendown()
+    t.color("red")
+    t.write("Finish", font=("Arial", 14, "bold"))
+    t.forward(fwidth)
+
+    t.hideturtle()
+
+def get_number_of_players():
+    count = screen.numinput(
+        "Кількість гравців",
+        "Введіть кількість гравців (2 - 8):",
+        minval=2,
+        maxval=8,
+    )
+    return int(count)
+
+def generate_turtles(num_players):
+    turtles.clear()
+    interval = fwidth // (num_players + 1)
+    start_x = -hwidth + interval
+
+    for i in range(num_players):
+        bot = turtle.Turtle()
+        bot.color(colors[i])
+        bot.shape("turtle")
+        bot.speed(5)
+        bot.penup()
+        bot.goto(start_x + interval * i, start)
+        bot.setheading(90)
+        bot.pendown()
+        turtles.append(bot)
+
+def start_race():
+    turtle.tracer(0)
+    game_in_progres = True
+    while game_in_progres:
+        for bot in turtles:
+
+            direction = 90
+            for obs in obstacles:
+                if bot.distance(obs) < 20:
+                    if bot.xcor() < obs.xcor():
+                        direction = 135
+                    else:
+                        direction = 45
+                    break
+
+            bot.setheading(direction)
+
+            bot.forward(random.randint(1, 10))
+            if bot.ycor() >= finish:
+                game_in_progres=False
+                declare_winner(bot)
+                break
+        
+        update_status()
+        turtle.update()
+        time.sleep(delay)
+    
+    status_pen.clear()
+    turtle.update()
+
+def declare_winner(winner):
+    winner.penup()
+    winner.goto(0, 0)
+    winner.write(
+        f"Переможець {winner.color()[0]}",
+        font=("Arial", 25, "bold"),
+        align="center",
+    )
+    winner.shapesize(3)
+    winner.goto(0, -60)
+
+def update_status():
+    leading_turtle = turtles[0]
+    for turtle in turtles:
+        if turtle.ycor() > leading_turtle.ycor():
+            leading_turtle = turtle
+
+    leader_color = leading_turtle.color()[0]
+
+    distance_to_finish = int(finish - leading_turtle.ycor())
+
+    status_pen.clear()
+    status_pen.write(
+        f"Лідирує {leader_color:<10} Дистанція до фінішу: {distance_to_finish:>4}",
+        align="center",
+        font=("Arial", 16, "bold")
+    )
+
+def generate_obstacles():
+    obstacles.clear()
+    for _ in range(number_of_obstacles):
+        x = random.randint(-hwidth + border, hwidth - border)
+        y = random.randint(start + border, finish - border)
+        obs = turtle.Turtle()
+        obs.speed(0)
+        obs.shape("square")
+        obs.color("black")
+        obs.penup()
+        obs.goto(x, y)
+        obstacles.append(obs)
+
+
+
+draw_start_button()
+screen.onscreenclick(start_game)
+
+turtle.done()
